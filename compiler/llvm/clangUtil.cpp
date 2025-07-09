@@ -2331,7 +2331,7 @@ void setupLLVMCodegenFilenames(void) {
     switch (getGpuCodegenType()) {
       case GpuCodegenType::GPU_CG_NVIDIA_CUDA:
       case GpuCodegenType::GPU_CG_AMD_HIP:
-        filenames->artifactFilename = genIntermediateFilename("chpl__gpu.s");
+        filenames->artifactFilename = genIntermediateFilename("chpl__gpu.ptx");
         break;
       case GpuCodegenType::GPU_CG_CPU:
         break;
@@ -4844,6 +4844,10 @@ static void makeBinaryLLVMForCUDA(const std::string& artifactFilename,
     USR_FATAL("Command 'fatbinary' not found\n");
   }
 
+  if (myshell("which nvlink > /dev/null 2>&1", "Check to see if nvlink command can be found", true)) {
+    USR_FATAL("Command 'nvlink' not found\n");
+  }
+
   std::string ptxasFlags = "";
 
   if (fGpuPtxasEnforceOpt) {
@@ -4882,7 +4886,37 @@ static void makeBinaryLLVMForCUDA(const std::string& artifactFilename,
     ptxasFlags += " --position-independent-code=false ";
   }
 
-  // Run ptxas for each architecture
+  // Need to pass -c (--compile-only) option to ptxas to enable device code linking
+  ptxasFlags += " -c ";
+
+
+  std::string nvlinkFlags = "";
+
+  // Collect all the .(o|a) files that we will pass to nvlink command
+  int filenum = 0;
+  while (const char* inputFilename = nthFilename(filenum++)) {
+    if (isCSource(inputFilename)) {
+      // TODO: handle C/C++/CUDA source files
+      USR_WARN("Skipping C/C++/CUDA source file '%s' in GPU codegen",
+               inputFilename);
+    } else if(isObjFile(inputFilename) ||
+              isStaticLibrary(inputFilename)) {
+      nvlinkFlags += " " + std::string(inputFilename);
+    }
+  }
+
+  // Add the library directories to the nvlink command
+  for_vector(const char, dirName, libDirs) {
+    nvlinkFlags += " -L" + std::string(dirName);
+  }
+
+  // Add the library names to the nvlink command
+  for_vector(const char, libName, libFiles) {
+    nvlinkFlags += " -l" + std::string(libName);
+  }
+
+
+  // Run ptxas and nvlink for each architecture
   std::string profiles;
   for (auto& gpuArch : gpuArches) {
     // Figure out the corresponding compute capability and object name
@@ -4891,6 +4925,7 @@ static void makeBinaryLLVMForCUDA(const std::string& artifactFilename,
     }
     std::string computeCap = std::string("compute_") + gpuArch[3] + gpuArch[4];
     std::string gpuObject = gpuObjectFilenamePrefix + "_" + gpuArch + ".o";
+    std::string gpuLinkedObject = gpuObjectFilenamePrefix + "_linked_" + gpuArch + ".o";
 
     // Execute the assembler for this architecture
     std::string ptxCmd = std::string("ptxas -m64 --gpu-name ") + gpuArch +
@@ -4900,11 +4935,20 @@ static void makeBinaryLLVMForCUDA(const std::string& artifactFilename,
                          " " + artifactFilename.c_str();
     mysystem(ptxCmd.c_str(), "PTX to object file");
 
+    // Link device code with nvlink
+    std::string nvlinkCmd = std::string("nvlink -m64 --arch ") +
+                            gpuArch + " " +
+                            std::string("--output-file ") +
+                            gpuLinkedObject + " " +
+                            gpuObject + " " +
+                            nvlinkFlags;
+    mysystem(nvlinkCmd.c_str(), "Linking device code with nvlink");
+                 
     // Track the new object we created and the CC we enabled.
     profiles += std::string(" --image=profile=") + computeCap +
                 ",file=" + artifactFilename;
     profiles += std::string(" --image=profile=") + gpuArch +
-                ",file=" + gpuObject;
+                ",file=" + gpuLinkedObject;
   }
 
   std::string fatbinaryCmd = std::string("fatbinary -64 ") +
