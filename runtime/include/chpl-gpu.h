@@ -171,6 +171,8 @@ bool chpl_gpu_is_host_ptr(const void* ptr);
 
 unsigned int chpl_gpu_device_clock_rate(int32_t devNum);
 
+void* chpl_gpu_get_module(void);
+
 // TODO do we really need to expose this?
 size_t chpl_gpu_get_alloc_size(void* ptr);
 

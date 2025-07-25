@@ -376,6 +376,14 @@ unsigned int chpl_gpu_device_clock_rate(int32_t devNum) {
   return (unsigned int)deviceClockRates[devNum];
 }
 
+void* chpl_gpu_get_module(void) {
+  CUmodule module = get_module();
+  if (module == NULL) {
+    chpl_internal_error("chpl_gpu_get_module: no module loaded");
+  }
+  return (void*)module;
+}
+
 bool chpl_gpu_impl_can_access_peer(int dev_lid1, int dev_lid2) {
   int p2p;
   CUDA_CALL(cuDeviceCanAccessPeer(&p2p, chpl_gpu_devices[dev_lid1],
