@@ -75,6 +75,9 @@ module GPU
   pragma "codegen for CPU and GPU"
   extern proc chpl_gpu_device_clock_rate(devNum : int(32)) : uint;
 
+  pragma "codegen for CPU and GPU"
+  extern proc chpl_gpu_get_module() : c_ptr(void);
+
   @chpldoc.nodoc
   proc gpuWritef(fmt) do  chpl_gpu_printf0(fmt);
   @chpldoc.nodoc
@@ -165,6 +168,11 @@ module GPU
    */
   proc gpuClocksPerSec(devNum : int) {
     return chpl_gpu_device_clock_rate(devNum : int(32));
+  }
+
+  @chpldoc.nodoc
+  proc gpuGetModule() : c_ptr(void) {
+    return chpl_gpu_get_module();
   }
 
   @chpldoc.nodoc
