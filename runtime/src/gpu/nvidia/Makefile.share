@@ -15,11 +15,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-GPU_SRCS = gpu-nvidia.c gpu-nvidia-cub.cc
+GPU_SRCS = gpu-nvidia.c gpu-nvidia-cub.cc gpu-nvidia-pgas.cc
 
 SRCS = $(GPU_SRCS)
 
 GPU_OBJS = $(addprefix $(GPU_OBJDIR)/,$(addsuffix .o,$(basename $(GPU_SRCS))))
+GPU_OBJS += $(GPU_OBJDIR)/gpu-nvidia-pgas-dlink.o $(GPU_OBJDIR)/gpu-nvidia-cub-dlink.o
+
+NVCC_RUNTIME_CXXFLAGS = -ccbin g++ -O3 -Xcompiler -fPIC --gpu-architecture=$(CHPL_MAKE_GPU_ARCH) -std=c++14
+NVCC_RUNTIME_INCLS = $(filter -I% -D%,$(RUNTIME_INCLS))  # To avoid issues with using options like `-Wno-unused`
+
+RUNTIME_CXXFLAGS_NOCUDA = $(RUNTIME_CXXFLAGS) -Wno-unused-variable -Wno-unused-function
 
 # TODO: clang-14 wants offload-arch to be passed multiple times and doesn't accept
 # a comma-separated list.
@@ -41,3 +47,19 @@ endif
 $(RUNTIME_OBJ_DIR)/gpu-nvidia-cub.o: gpu-nvidia-cub.cc \
                                          $(RUNTIME_OBJ_DIR_STAMP)
 	$(CXX) -c $(CXX11_STD) $(RUNTIME_CXXFLAGS) $(RUNTIME_INCLS) -o $@ $<
+
+$(RUNTIME_OBJ_DIR)/gpu-nvidia-pgas.o: gpu-nvidia-pgas.cc \
+										  $(RUNTIME_OBJ_DIR_STAMP)
+	$(CXX) -c $(CXX11_STD) $(RUNTIME_CXXFLAGS) $(RUNTIME_INCLS) -o $@ $<
+
+# $(RUNTIME_OBJ_DIR)/gpu-nvidia-pgas.o: gpu-nvidia-pgas.cc \
+#                                          $(RUNTIME_OBJ_DIR_STAMP)
+# 	nvcc -x cu $(NVCC_RUNTIME_CXXFLAGS) --device-c $(NVCC_RUNTIME_INCLS) -o $@ $<
+
+$(RUNTIME_OBJ_DIR)/gpu-nvidia-pgas-dlink.o: $(RUNTIME_OBJ_DIR)/gpu-nvidia-pgas.o \
+                                                $(RUNTIME_OBJ_DIR_STAMP)
+	nvcc $(NVCC_RUNTIME_CXXFLAGS) --device-link $(NVCC_RUNTIME_INCLS) -o $@ $<
+
+$(RUNTIME_OBJ_DIR)/gpu-nvidia-cub-dlink.o: $(RUNTIME_OBJ_DIR)/gpu-nvidia-cub.o \
+												$(RUNTIME_OBJ_DIR_STAMP)
+	nvcc $(NVCC_RUNTIME_CXXFLAGS) --device-link $(NVCC_RUNTIME_INCLS) -o $@ $<

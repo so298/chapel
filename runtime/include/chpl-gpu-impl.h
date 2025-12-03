@@ -109,6 +109,8 @@ void chpl_gpu_impl_name(int dev, char *resultBuffer, int bufferSize);
 
 int chpl_gpu_impl_query_attribute(int dev, int attribute);
 
+void chpl_gpu_impl_setup_pgas(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -578,6 +578,8 @@ void chpl_gpu_impl_setup_device(int my_index, int global_index) {
 
   chpl_gpu_impl_set_globals(my_index, module);
 
+  chpl_gpu_impl_setup_pgas();
+
   // Initialize arena allocator for this device (if enabled at runtime)
   if (arena_allocator_enabled && device_arenas != NULL) {
     CUdeviceptr arena_base = 0;

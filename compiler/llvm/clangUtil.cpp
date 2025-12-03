@@ -5774,6 +5774,15 @@ static std::string buildLLVMLinkCommand(std::string useLinkCXX,
   std::string command = useLinkCXX + " " + options + " " +
                         moduleFilename + " " + maino;
 
+  // **Workaround for NVSHMEM linking issue**
+  // If NVSHMEM is being used from Chapel runtime library (libchpl.a),
+  // the linker fails to resolve some symbols like `__cudaRegisterLinkedBinary_*`
+  // called from NVSHMEM code for CUDA separable compilation.
+  // To resolve this, we pass `-Wl,--start-group <libchpl.a> -lnvshmem -Wl,--end-group`
+  // to the linker. This forces the linker to repeatedly search the libraries
+  // in the group until all symbols are resolved.
+  command += " -Wl,--start-group";
+
   // For dynamic linking, leave it alone.  For static, append -static.
   // See $CHPL_HOME/make/compiler/Makefile.clang (and keep this in sync
   // with it).
@@ -5816,6 +5825,9 @@ static std::string buildLLVMLinkCommand(std::string useLinkCXX,
     command += " -l";
     command += libName;
   }
+
+  // Workaround for NVSHMEM linking issue (see above for details)
+  command += " -Wl,--end-group";
 
   return command;
 }
