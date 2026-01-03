@@ -522,7 +522,7 @@ void chpl_gpu_impl_collect_topo_addr_info(chpl_topo_pci_addr_t* into,
 static void configure_arena_allocator(void) {
   // Allow enabling/disabling the arena allocator via environment variable
   // Default is false (disabled)
-  arena_allocator_enabled = chpl_env_rt_get_bool("GPU_ARENA_ALLOCATOR", false);
+  arena_allocator_enabled = chpl_gpu_impl_pgas_enabled();
 
   if (arena_allocator_enabled) {
     // Get heap size from environment variable
@@ -578,13 +578,14 @@ void chpl_gpu_impl_setup_device(int my_index, int global_index) {
 
   chpl_gpu_impl_set_globals(my_index, module);
 
-  chpl_gpu_impl_setup_pgas();
-
   // Initialize arena allocator for this device (if enabled at runtime)
   if (arena_allocator_enabled && device_arenas != NULL) {
-    CUdeviceptr arena_base = 0;
-    CUresult result = cuMemAlloc(&arena_base, gpu_heap_size);
-    if (result == CUDA_SUCCESS) {
+    // Setup GPU PGAS
+    chpl_gpu_impl_pgas_setup();
+
+
+    void* arena_base = chpl_gpu_impl_pgas_sym_malloc(gpu_heap_size);
+    if (arena_base != NULL) {
       arena_init(&device_arenas[my_index], (void*)arena_base,
                  gpu_heap_size, my_index);
     } else {
@@ -751,9 +752,6 @@ void* chpl_gpu_impl_mem_array_alloc(size_t size) {
       chpl_internal_error("GPU arena out of memory. "
                           "Increase CHPL_RT_GPU_HEAP_SIZE or reduce memory usage.");
     }
-#if 0
-    printf("Allocated %zu bytes from GPU arena at %p\n", size, ptr);
-#endif
     return ptr;
   }
 

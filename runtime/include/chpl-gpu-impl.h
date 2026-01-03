@@ -109,7 +109,16 @@ void chpl_gpu_impl_name(int dev, char *resultBuffer, int bufferSize);
 
 int chpl_gpu_impl_query_attribute(int dev, int attribute);
 
-void chpl_gpu_impl_setup_pgas(void);
+// GPU PGAS support
+int chpl_gpu_impl_pgas_enabled(void);
+void chpl_gpu_impl_pgas_setup(void);
+void* chpl_gpu_impl_pgas_sym_malloc(size_t size);
+void chpl_gpu_impl_pgas_sym_free(void* ptr);
+void chpl_gpu_impl_pgas_comm_get(void *dst, c_nodeid_t node, void* src,
+                                size_t size);
+void chpl_gpu_impl_pgas_comm_put(void* dst, c_nodeid_t node, void* src,
+                                size_t size);
+
 
 #ifdef __cplusplus
 }

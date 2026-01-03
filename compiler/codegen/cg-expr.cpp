@@ -5649,14 +5649,14 @@ static void codegenPutGet(CallExpr* call, GenRet &ret) {
     if (call->primitive->tag == PRIM_CHPL_COMM_GET ||
         call->primitive->tag == PRIM_CHPL_COMM_ARRAY_GET) {
       if (useGpuVersion) {
-        fn = "chpl_gen_comm_get_from_subloc";
+        fn = "chpl_gen_comm_get_from_subloc_array_aware";
       }
       else {
         fn = "chpl_gen_comm_get";
       }
     } else {
       if (useGpuVersion) {
-        fn = "chpl_gen_comm_put_to_subloc";
+        fn = "chpl_gen_comm_put_to_subloc_array_aware";
       }
       else {
         fn = "chpl_gen_comm_put";
@@ -5757,6 +5757,16 @@ static void codegenPutGet(CallExpr* call, GenRet &ret) {
     args.push_back(genCommID(gGenInfo));
     args.push_back(call->get(curArgIdx++));
     args.push_back(call->get(curArgIdx++));
+
+    if (useGpuVersion) {
+      if (call->primitive->tag == PRIM_CHPL_COMM_ARRAY_PUT ||
+          call->primitive->tag == PRIM_CHPL_COMM_ARRAY_GET) {
+        // array aware GPU versions need `is_array` argument
+        args.push_back(GenRet(1));
+      } else {
+        args.push_back(GenRet(0));
+      }
+    }
 
     if (!fLLVMWideOpt) {
       codegenCallWithArgs(fn, args);

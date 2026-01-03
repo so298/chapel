@@ -962,6 +962,19 @@ extern void chpl_gpu_comm_on_get(c_sublocid_t src_subloc, void* addr,
                                  c_nodeid_t dst_node, c_sublocid_t dst_subloc,
                                  void* raddr, size_t size);
 
+void chpl_gpu_comm_put_array(c_nodeid_t dst_node, c_sublocid_t dst_subloc, void *dst,
+                       c_sublocid_t src_subloc, void *src,
+                       size_t size, int32_t commID, int ln, int32_t fn) {
+  if (chpl_gpu_impl_pgas_enabled() && src_subloc >= 0 && dst_subloc >= 0) {
+    // If both source and destination are on device, we can use a direct put
+    // in the GPU PGAS comm layer.
+    chpl_gpu_impl_pgas_comm_put(dst, dst_node, src, size);
+  } else {
+    chpl_gpu_comm_put(dst_node, dst_subloc, dst,
+                      src_subloc, src,
+                      size, commID, ln, fn);
+  }
+}
 
 void chpl_gpu_comm_put(c_nodeid_t dst_node, c_sublocid_t dst_subloc, void *dst,
                        c_sublocid_t src_subloc, void *src,
@@ -969,6 +982,12 @@ void chpl_gpu_comm_put(c_nodeid_t dst_node, c_sublocid_t dst_subloc, void *dst,
 {
   void* src_data = src;
   c_sublocid_t src_data_subloc = src_subloc;
+
+  // print info
+  // printf("chpl_gpu_comm_put: dst_node=%d dst_subloc=%d src_subloc=%d size=%zu loc=<%s:%d>\n",
+  //        dst_node, dst_subloc, src_subloc, size, chpl_lookupFilename(fn), ln);
+
+
   if (src_subloc >= 0) {
     // source is on device, we can't pass device pointers to comm layer. We'll
     // create a copy of the source on the local host.
@@ -995,12 +1014,31 @@ void chpl_gpu_comm_put(c_nodeid_t dst_node, c_sublocid_t dst_subloc, void *dst,
   }
 }
 
+void chpl_gpu_comm_get_array(c_sublocid_t dst_subloc, void *dst,
+                       c_nodeid_t src_node, c_sublocid_t src_subloc, void *src,
+                       size_t size, int32_t commID, int ln, int32_t fn) {
+  if (chpl_gpu_impl_pgas_enabled() && dst_subloc >= 0 && src_subloc >= 0) {
+    // If both source and destination are on device, we can use a direct get
+    // in the GPU PGAS comm layer.
+    chpl_gpu_impl_pgas_comm_get(dst, src_node, src, size);
+  } else {
+    chpl_gpu_comm_get(dst_subloc, dst,
+                      src_node, src_subloc, src,
+                      size, commID, ln, fn);
+  }
+}
+
 void chpl_gpu_comm_get(c_sublocid_t dst_subloc, void *dst,
                        c_nodeid_t src_node, c_sublocid_t src_subloc, void *src,
                        size_t size, int32_t commID, int ln, int32_t fn)
 {
   void* dst_buff = dst;
   c_sublocid_t dst_buff_subloc = dst_subloc;
+
+  // print info
+  // printf("chpl_gpu_comm_get: dst_subloc=%d src_node=%d src_subloc=%d size=%zu loc=<%s:%d>\n",
+  //        dst_subloc, src_node, src_subloc, size, chpl_lookupFilename(fn), ln);
+
   if (dst_subloc >= 0) {
     // destination is on device, we can't pass device pointers to comm layer.
     // We'll create a buffer on the local host.

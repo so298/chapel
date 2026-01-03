@@ -132,10 +132,17 @@ void chpl_gpu_memcpy(c_sublocid_t dst_subloc, void* dst,
 void chpl_gpu_comm_put(c_nodeid_t dst_node, c_sublocid_t dst_subloc, void *dst,
                        c_sublocid_t src_subloc, void *src,
                        size_t size, int32_t commID, int ln, int32_t fn);
+void chpl_gpu_comm_put_array(c_nodeid_t dst_node, c_sublocid_t dst_subloc, void *dst,
+                       c_sublocid_t src_subloc, void *src,
+                       size_t size, int32_t commID, int ln, int32_t fn);
 
 void chpl_gpu_comm_get(c_sublocid_t dst_subloc, void *dst,
                        c_nodeid_t src_node, c_sublocid_t src_subloc, void *src,
                        size_t size, int32_t commID, int ln, int32_t fn);
+void chpl_gpu_comm_get_array(c_sublocid_t dst_subloc, void *dst,
+                       c_nodeid_t src_node, c_sublocid_t src_subloc, void *src,
+                       size_t size, int32_t commID, int ln, int32_t fn);
+
 
 void chpl_gpu_comm_get_strd(c_sublocid_t dst_subloc,
                             void* dstaddr_arg, size_t* dststrides,
@@ -178,6 +185,11 @@ size_t chpl_gpu_get_alloc_size(void* ptr);
 
 bool chpl_gpu_can_access_peer(int dev1, int dev2);
 void chpl_gpu_set_peer_access(int dev1, int dev2, bool enable);
+
+// GPU PGAS
+void chpl_gpu_pgas_get_uid(u_int8_t uid_out[128]);
+void chpl_gpu_pgas_init_with_uid(int rank, int nranks, u_int8_t uid_in[128]);
+
 
 #define DECL_ONE_REDUCE(chpl_kind, data_type) \
 void chpl_gpu_##chpl_kind##_reduce_##data_type(void* data, int n,\
