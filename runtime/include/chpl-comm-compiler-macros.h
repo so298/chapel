@@ -71,8 +71,8 @@ void chpl_gen_comm_get_from_subloc_array_aware(void *addr, c_nodeid_t src_node,
 {
   c_sublocid_t dst_subloc = chpl_task_getRequestedSubloc();
 
-  printf("chpl_gen_comm_get_from_subloc_array_aware: src_node=%d src_subloc=%d chpl_nodeID=%d dst_subloc=%d size=%zu is_array=%d\n",
-         (int)src_node, (int)src_subloc, (int)chpl_nodeID, (int)dst_subloc, size, is_array);
+  // printf("chpl_gen_comm_get_from_subloc_array_aware: src_node=%d src_subloc=%d chpl_nodeID=%d dst_subloc=%d size=%zu is_array=%d\n",
+  //        (int)src_node, (int)src_subloc, (int)chpl_nodeID, (int)dst_subloc, size, is_array);
 
   if (chpl_nodeID == src_node) {
     chpl_gpu_memcpy(dst_subloc, addr, src_subloc, raddr, size, commID, ln, fn);
@@ -166,8 +166,8 @@ void chpl_gen_comm_put_to_subloc_array_aware(
 
   c_sublocid_t src_subloc = chpl_task_getRequestedSubloc();
 
-  printf("chpl_gen_comm_put_to_subloc_array_aware: dst_node=%d dst_subloc=%d chpl_nodeID=%d src_subloc=%d size=%zu is_array=%d\n",
-         (int)dst_node, (int)dst_subloc, (int)chpl_nodeID, (int)src_subloc, size, is_array);
+  // printf("chpl_gen_comm_put_to_subloc_array_aware: dst_node=%d dst_subloc=%d chpl_nodeID=%d src_subloc=%d size=%zu is_array=%d\n",
+  //        (int)dst_node, (int)dst_subloc, (int)chpl_nodeID, (int)src_subloc, size, is_array);
 
   if (chpl_nodeID == dst_node) {
     chpl_gpu_memcpy(dst_subloc, raddr, src_subloc, addr, size, commID, ln, fn);

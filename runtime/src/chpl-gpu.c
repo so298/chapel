@@ -965,7 +965,7 @@ extern void chpl_gpu_comm_on_get(c_sublocid_t src_subloc, void* addr,
 void chpl_gpu_comm_put_array(c_nodeid_t dst_node, c_sublocid_t dst_subloc, void *dst,
                        c_sublocid_t src_subloc, void *src,
                        size_t size, int32_t commID, int ln, int32_t fn) {
-  if (chpl_gpu_impl_pgas_enabled() && src_subloc >= 0 && dst_subloc >= 0) {
+  if (chpl_gpu_impl_pgas_is_enabled() && src_subloc >= 0 && dst_subloc >= 0) {
     // If both source and destination are on device, we can use a direct put
     // in the GPU PGAS comm layer.
     chpl_gpu_impl_pgas_comm_put(dst, dst_node, src, size);
@@ -1017,7 +1017,7 @@ void chpl_gpu_comm_put(c_nodeid_t dst_node, c_sublocid_t dst_subloc, void *dst,
 void chpl_gpu_comm_get_array(c_sublocid_t dst_subloc, void *dst,
                        c_nodeid_t src_node, c_sublocid_t src_subloc, void *src,
                        size_t size, int32_t commID, int ln, int32_t fn) {
-  if (chpl_gpu_impl_pgas_enabled() && dst_subloc >= 0 && src_subloc >= 0) {
+  if (chpl_gpu_impl_pgas_is_enabled() && dst_subloc >= 0 && src_subloc >= 0) {
     // If both source and destination are on device, we can use a direct get
     // in the GPU PGAS comm layer.
     chpl_gpu_impl_pgas_comm_get(dst, src_node, src, size);

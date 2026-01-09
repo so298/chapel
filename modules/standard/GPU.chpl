@@ -907,6 +907,46 @@ module GPU
   }
 
 
+  // 1. Initialize GPU PGAS
+  // 2. Register PGAS memory as a GPU memory arena
+  proc gpu_pgas_start(pgas_heap_size: c_size_t) {
+    param uid_size = 128;
+    extern proc chpl_gpu_pgas_get_uid(ref uid_out: c_array(uint(8), uid_size));
+    extern proc chpl_gpu_pgas_init_with_uid(
+      gpu_id: c_int, n_gpus: c_int, const ref uid_in: c_array(uint(8), uid_size));
+
+    writeln("ChapelGpuSupport: Initializing GPU PGAS model");
+
+    on Locales[0] {
+      writeln("ChapelGpuSupport: Generating unique ID on main locale");
+      var uid_main = new c_array(uint(8), uid_size);
+      on here.gpus[0] {
+        chpl_gpu_pgas_get_uid(uid_main);
+      }
+
+      var n_gpus: c_int = Locales.size: c_int; // Assume 1 node : 1 GPU for now
+      coforall loc in Locales do on loc {
+        writeln("ChapelGpuSupport: Initializing GPU PGAS on locale ", here.id);
+        var gpu_id: c_int = here.id: c_int;
+        on here.gpus[0] {
+          var uid = new c_array(uint(8), uid_size);
+          uid = uid_main; // copy from main locale
+          chpl_gpu_pgas_init_with_uid(gpu_id, n_gpus, uid);
+        }
+      }
+    }
+
+    // Register PGAS heap
+    extern proc chpl_gpu_pgas_setup_heap_arena(heap_size: c_size_t) : c_ptr(void);
+    coforall loc in Locales do on loc {
+      writeln("ChapelGpuSupport: Registering PGAS heap as GPU arena on locale ",
+              here.id);
+      on here.gpus[0] {
+        writeln("ChapelGpuSupport: PGAS heap size: ", pgas_heap_size);
+        chpl_gpu_pgas_setup_heap_arena(pgas_heap_size);
+      }
+    }
+  }
 
 
 

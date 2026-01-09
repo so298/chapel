@@ -189,6 +189,10 @@ void chpl_gpu_set_peer_access(int dev1, int dev2, bool enable);
 // GPU PGAS
 void chpl_gpu_pgas_get_uid(u_int8_t uid_out[128]);
 void chpl_gpu_pgas_init_with_uid(int rank, int nranks, u_int8_t uid_in[128]);
+void chpl_gpu_pgas_setup_heap_arena(size_t pgas_heap_size);
+void* chpl_gpu_pgas_sym_malloc(size_t size);
+void chpl_gpu_pgas_sym_free(void* ptr);
+void chpl_gpu_arena_init_device(int device_index, void* base, size_t size);
 
 
 #define DECL_ONE_REDUCE(chpl_kind, data_type) \

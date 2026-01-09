@@ -110,14 +110,24 @@ void chpl_gpu_impl_name(int dev, char *resultBuffer, int bufferSize);
 int chpl_gpu_impl_query_attribute(int dev, int attribute);
 
 // GPU PGAS support
-int chpl_gpu_impl_pgas_enabled(void);
-void chpl_gpu_impl_pgas_setup(void);
-void* chpl_gpu_impl_pgas_sym_malloc(size_t size);
-void chpl_gpu_impl_pgas_sym_free(void* ptr);
+void chpl_gpu_impl_pgas_enable(int enable);
+int chpl_gpu_impl_pgas_is_enabled(void);
 void chpl_gpu_impl_pgas_comm_get(void *dst, c_nodeid_t node, void* src,
                                 size_t size);
 void chpl_gpu_impl_pgas_comm_put(void* dst, c_nodeid_t node, void* src,
                                 size_t size);
+
+// GPU Arena Allocator
+// These functions manage a pre-allocated memory pool for GPU device memory.
+// The arena is enabled via chpl_gpu_impl_pgas_enable().
+void chpl_gpu_arena_configure(int num_devices);
+int chpl_gpu_arena_enabled(void);
+// Initialize the arena for a specific device with pre-allocated GPU memory.
+// The caller provides the base pointer and size (e.g., from nvshmem_malloc).
+void* chpl_gpu_arena_alloc(int device_lid, size_t size);
+void chpl_gpu_arena_free(void* ptr);
+size_t chpl_gpu_arena_get_alloc_size(void* ptr);
+int chpl_gpu_arena_is_ptr(const void* ptr);
 
 
 #ifdef __cplusplus
